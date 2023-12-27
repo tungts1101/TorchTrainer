@@ -8,7 +8,7 @@ from tqdm import tqdm
 class BaseTrainer(ABC):
     def __init__(self, model,
                  train_loader, val_loader, test_loader,
-                 loss_fn, metric_fn, optimizer, scheduler,
+                 loss_fn, metric_fn, optimizer_factory, scheduler,
                  accelerator
                  ):
         self.model = model
@@ -17,7 +17,7 @@ class BaseTrainer(ABC):
         self.test_loader = test_loader
         self.loss_fn = loss_fn
         self.metric_fn = metric_fn
-        self.optimizer = optimizer
+        self.optimizer_factory = optimizer_factory
         self.scheduler = scheduler
         self.accelerator = accelerator
     
@@ -96,9 +96,11 @@ class BaseTrainer(ABC):
         self.writer_step = 0
         self.resume_path = os.path.join(self.log_dir, 'resume.pth')
         self.cur_epoch = 0
-        self.resume()
 
         self.model.to(self.accelerator)
+        self.optimizer = self.optimizer_factory(self.model)
+
+        self.resume()
 
         self.progress_bar = tqdm(range(self.cur_epoch, epochs))
         self.progress_bar_postfix = {}

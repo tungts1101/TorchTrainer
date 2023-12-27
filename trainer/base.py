@@ -25,6 +25,7 @@ class BaseTrainer(ABC):
         if not os.path.exists(self.resume_path): return
         train_record = torch.load(self.resume_path)
         self.cur_epoch = train_record['epoch']
+        self.writer_step = train_record['step']
         self.model.load_state_dict(train_record['model_state_dict'])
         self.optimizer.load_state_dict(train_record['optimizer_state_dict'])
     
@@ -54,9 +55,11 @@ class BaseTrainer(ABC):
     def on_end_train_one_batch(self, batch_idx, loss):
         self.train_loss += loss.item()
         if batch_idx % self.log_train_per_batchs == self.log_train_per_batchs-1:
-            self.writer.add_scalar('train_loss', self.train_loss)
+            loss_val = self.train_loss / self.log_train_per_batchs
+            self.writer.add_scalar('train_loss', loss_val)
+            self.writer_step += 1
             self.progress_bar_postfix.update({
-                'train_loss': f'{self.train_loss:.3f}'
+                'train_loss': f'{loss_val:.3f}'
             })
             self.progress_bar.set_postfix(self.progress_bar_postfix)
             self.train_loss = 0.0
@@ -83,13 +86,14 @@ class BaseTrainer(ABC):
         return result
 
     def run(self, epochs=1, begin_from=None, root_log_dir='./logs',
-            log_train_per_batchs=500):
+            log_train_per_batchs=1):
         self.log_train_per_batchs = log_train_per_batchs
 
         if begin_from == None:
             begin_from = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         self.log_dir = os.path.join(root_log_dir, begin_from)
         self.writer = tensorboard.SummaryWriter(log_dir=self.log_dir)
+        self.writer_step = 0
         self.resume_path = os.path.join(self.log_dir, 'resume.pth')
         self.cur_epoch = 0
         self.resume()
@@ -105,6 +109,7 @@ class BaseTrainer(ABC):
             self.cur_epoch += 1
             self.train_record = {
                 'epoch': self.cur_epoch,
+                'step': self.writer_step,
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict()
             }

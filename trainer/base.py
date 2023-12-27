@@ -56,7 +56,7 @@ class BaseTrainer(ABC):
         self.train_loss += loss.item()
         if batch_idx % self.log_train_per_batchs == self.log_train_per_batchs-1:
             loss_val = self.train_loss / self.log_train_per_batchs
-            self.writer.add_scalar('train_loss', loss_val)
+            self.writer.add_scalar('train_loss', loss_val, self.writer_step)
             self.writer_step += 1
             self.progress_bar_postfix.update({
                 'train_loss': f'{loss_val:.3f}'
@@ -78,7 +78,7 @@ class BaseTrainer(ABC):
         result.update({
             'correct': correct
         })
-        self.writer.add_scalar('test_correct', correct)
+        self.writer.add_scalar('test_correct', correct, self.cur_epoch)
         self.progress_bar_postfix.update({
             'test_correct': f'{correct:.3f}'
         })

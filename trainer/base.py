@@ -55,9 +55,10 @@ class BaseTrainer(ABC):
         self.train_loss += loss.item()
         if batch_idx % self.log_train_per_batchs == self.log_train_per_batchs-1:
             self.writer.add_scalar('train_loss', self.train_loss)
-            self.progress_bar.set_postfix({
+            self.progress_bar_postfix.update({
                 'train_loss': f'{self.train_loss:.3f}'
             })
+            self.progress_bar.set_postfix(self.progress_bar_postfix)
             self.train_loss = 0.0
 
     def test_one_epoch(self):
@@ -75,9 +76,10 @@ class BaseTrainer(ABC):
             'correct': correct
         })
         self.writer.add_scalar('test_correct', correct)
-        self.progress_bar.set_postfix({
+        self.progress_bar_postfix.update({
             'test_correct': f'{correct:.3f}'
         })
+        self.progress_bar.set_postfix(self.progress_bar_postfix)
         return result
 
     def run(self, epochs=1, begin_from=None, root_log_dir='./logs',
@@ -95,6 +97,7 @@ class BaseTrainer(ABC):
         self.model.to(self.accelerator)
 
         self.progress_bar = tqdm(range(self.cur_epoch, epochs))
+        self.progress_bar_postfix = {}
         for epoch in self.progress_bar:
             train_result_one_epoch = self.train_one_epoch()
             test_result_one_epoch = self.test_one_epoch()

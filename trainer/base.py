@@ -70,7 +70,7 @@ class BaseTrainer(ABC):
                 inputs, labels = inputs.to(self.accelerator), labels.to(self.accelerator)
                 outputs = self.model(inputs)
                 correct += self.metric_fn(outputs, labels)
-        correct /= len(self.test_loader.data)
+        correct /= len(self.test_loader.dataset)
         result.update({
             'correct': correct
         })
